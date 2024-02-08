@@ -1,16 +1,28 @@
-# 샘플 Python 스크립트입니다.
+import sys
+import spacy
 
-# ⌃R을(를) 눌러 실행하거나 내 코드로 바꿉니다.
-# 클래스, 파일, 도구 창, 액션 및 설정을 어디서나 검색하려면 ⇧ 두 번을(를) 누릅니다.
+# 커맨드 라인 인자를 확인하여 문장 입력 여부를 검사
+if len(sys.argv) < 2:
+    print("Usage: python script_name.py <sentence>")
+    exit()
 
+# spaCy의 영어 모델을 로드
+nlp = spacy.load("en_core_web_sm")
 
-def print_hi(name):
-    # 스크립트를 디버그하려면 하단 코드 줄의 중단점을 사용합니다.
-    print(f'Hi, {name}')  # 중단점을 전환하려면 ⌘F8을(를) 누릅니다.
+# 커맨드 라인에서 입력받은 문장
+sentence = sys.argv[1]
 
+# 문장을 처리
+doc = nlp(sentence)
 
-# 스크립트를 실행하려면 여백의 녹색 버튼을 누릅니다.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+# 출력을 위한 헤더
+print(f"{'Token':<15} {'POS':<10}")
 
-# https://www.jetbrains.com/help/pycharm/에서 PyCharm 도움말 참조
+# 구분선 출력
+print(f"{'-'*15} {'-'*10}")
+
+# 토큰과 품사 태그를 테이블 형태로 출력
+for token in doc:
+    # SPACE 품사 태그를 가진 토큰은 건너뛰기
+    if token.pos_ != "SPACE":
+        print(f"{token.text:<15} {token.pos_:<10}")
