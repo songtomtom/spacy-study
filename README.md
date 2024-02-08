@@ -14,7 +14,7 @@
 먼저 GitHub 또는 다른 Git 호스팅 서비스에서 프로젝트를 클론하세요.
 
 ```bash
-git@github.com:songtomtom/spacy-study.git
+git clone git@github.com:songtomtom/spacy-study.git
 cd spacy-study
 ````
 2. 의존성 설치
