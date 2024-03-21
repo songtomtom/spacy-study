@@ -7,15 +7,19 @@ nlp = spacy.load("en_core_web_sm")
 # Initialize the Matcher
 matcher = Matcher(nlp.vocab)
 
-# Define patterns for phrasal verbs
-verb_adv_pattern = [{"POS": "VERB"}, {"POS": "ADV"}]  # Verb followed by an adverb
-verb_adp_pattern = [{"POS": "VERB"}, {"POS": "ADP"}]  # Verb followed by a preposition
-verb_adv_adp_pattern = [{"POS": "VERB"}, {"POS": "ADV"}, {"POS": "ADP"}]  # Verb followed by an adverb then a preposition
+# Define patterns allowing for a noun or pronoun
+# These patterns are the same as before, intended to capture verb phrases possibly including nouns or pronouns
+verb_noun_or_pron_adv_pattern = [{"POS": "VERB"}, {"POS": "NOUN", "OP": "?"}, {"POS": "PRON", "OP": "?"},
+                                 {"POS": "ADV"}]
+verb_noun_or_pron_adp_pattern = [{"POS": "VERB"}, {"POS": "NOUN", "OP": "?"}, {"POS": "PRON", "OP": "?"},
+                                 {"POS": "ADP"}]
+verb_noun_or_pron_adv_adp_pattern = [{"POS": "VERB"}, {"POS": "NOUN", "OP": "?"}, {"POS": "PRON", "OP": "?"},
+                                     {"POS": "ADV"}, {"POS": "ADP"}]
 
 # Add patterns to the matcher
-matcher.add("VERB_ADV", [verb_adv_pattern])
-matcher.add("VERB_ADP", [verb_adp_pattern])
-matcher.add("VERB_ADV_ADP", [verb_adv_adp_pattern])
+matcher.add("VERB_NOUN_OR_PRON_ADV", [verb_noun_or_pron_adv_pattern])
+matcher.add("VERB_NOUN_OR_PRON_ADP", [verb_noun_or_pron_adp_pattern])
+matcher.add("VERB_NOUN_OR_PRON_ADV_ADP", [verb_noun_or_pron_adv_adp_pattern])
 
 # Sample texts
 texts = ["Despite the hardships and challenges, he did not give up on his dreams.",
@@ -26,20 +30,35 @@ texts = ["Despite the hardships and challenges, he did not give up on his dreams
          "He tends to worry too much about the small details.",
          "I waited about for an hour, but they didn't come.",
          "They enter into an agreement with their rivals.",
-         "Could you put me through to extension 259 please."]
+         "Could you put me through to extension 259 please.",
+         "I've booked us into a hotel in the centre of town for three nights.",
+         "I'll book us in at the Intercontinental."]
 
-# Process each text, lemmatize, and find matches in the lemmatized context
+
+# Process each text and find matches
 for text in texts:
-    # Lemmatize the text
     doc = nlp(text)
     lemmatized_sentence = " ".join([token.lemma_ for token in doc])
+    print(f"Sentence: '{lemmatized_sentence}'")
 
-    # Re-analyze the lemmatized sentence
     lemmatized_doc = nlp(lemmatized_sentence)
-
-    # Find matches
     matches = matcher(lemmatized_doc)
-    print(f"Matches in: '{lemmatized_sentence}'")
+
+    # Collect all extracted phrasal verbs
+    phrasal_verbs = []
     for match_id, start, end in matches:
-        span = lemmatized_doc[start:end]
-        print(f" - Matched: {span.text}")
+        verb_phrase = ' '.join(token.text for token in lemmatized_doc[start:end] if token.pos_ in ['VERB', 'ADV', 'ADP'])
+        phrasal_verbs.append((start, verb_phrase))
+
+    # Combine overlapping phrasal verbs
+    combined_phrasal_verbs = []
+    phrasal_verbs = sorted(phrasal_verbs, key=lambda x: x[0])
+    for i in range(len(phrasal_verbs)):
+        if i + 1 < len(phrasal_verbs) and phrasal_verbs[i][1] in phrasal_verbs[i + 1][1]:
+            # Skip adding the shorter verb phrase when it's part of the next one
+            continue
+        combined_phrasal_verbs.append(phrasal_verbs[i][1])
+
+    # Print the results
+    for verb_phrase in combined_phrasal_verbs:
+        print(f" - Extracted phrasal verb: {verb_phrase}")
